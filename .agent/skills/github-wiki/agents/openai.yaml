@@ -1,0 +1,3 @@
+interface:
+  display_name: "GitHub Wiki"
+  short_description: "Maintain wiki pages, metadata, and navigation"

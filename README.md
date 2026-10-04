@@ -5,6 +5,7 @@ Shared AI-agent context and the **starting point for developer setup** for the r
 > **This repo is public.** Don't commit personal information or secrets here.
 
 - [AGENTS.md](AGENTS.md): context for AI coding agents about the local workspace (`CLAUDE.md` is a symlink to it)
+- [.agent/skills/](.agent/skills/): shared workspace skills, including [GitHub Wiki maintenance](.agent/skills/github-wiki/SKILL.md)
 - [link-workspace.sh](link-workspace.sh): sets up the local workspace (symlinks into the workspace root)
 - [bootstrap-dev-env.sh](bootstrap-dev-env.sh): installs the shared developer tools (macOS only for now)
 - [ninegene.code-workspace](ninegene.code-workspace): shared VS Code workspace settings and tasks
@@ -61,8 +62,13 @@ gh repo clone ninegene/.github
 ├── ninegene.code-workspace -> .github/ninegene.code-workspace
 ├── AGENTS.md -> .github/AGENTS.md
 ├── CLAUDE.md -> AGENTS.md
+├── .agent/skills/github-wiki -> ../../.github/.agent/skills/github-wiki
+├── .agents/skills/github-wiki -> ../../.github/.agent/skills/github-wiki
+├── .claude/skills/github-wiki -> ../../.github/.agent/skills/github-wiki
 └── <repo-name>/                      # other repos, cloned as needed
 ```
+
+Skills are maintained once in `.github/.agent/skills/<name>/`. The script creates a per-skill link in the workspace's `.agent/skills/`, plus the discovery locations used by [Codex](https://developers.openai.com/codex/skills), [GitHub Copilot](https://docs.github.com/en/copilot/reference/customization-cheat-sheet) (`.agents/skills/`), and [Claude](https://code.claude.com/docs/en/skills) (`.claude/skills/`). Re-run it after adding a shared skill. Existing conflicting paths are skipped and reported instead of overwritten.
 
 #### Open the workspace in VS Code
 

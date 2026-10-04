@@ -18,6 +18,14 @@ The workspace-root `AGENTS.md` is a symlink to `.github/AGENTS.md` in the [nineg
 
 `ninegene` holds personal projects. Some are public, some are private, and some are forks or third-party clones kept for reference. Each repo's own docs say what it is.
 
+### Shared GitHub Wiki
+
+The [shared wiki](https://github.com/ninegene/.github/wiki) belongs to [ninegene/.github](https://github.com/ninegene/.github), but its Git history is separate. Clone it from the workspace root with `gh repo clone ninegene/.github.wiki` and edit pages in `.github.wiki/`, not inside `.github/`. Its default branch is `master`; pages can also be edited in the browser, so check for remote changes before editing or publishing.
+
+Use the `github-wiki` skill (`.github/.agent/skills/github-wiki/SKILL.md`) for page format, navigation, and URLs. Wiki content is public: apply §1. Preparing wiki edits does not authorize a commit or publication; follow §5.
+
+Shared skills work with Claude, Codex, and GitHub Copilot. The source lives in `.github/.agent/skills/<name>/`; run `.github/link-workspace.sh` to link each skill into the workspace root (usually `~/ninegene/`) at `.claude/skills/` (Claude), `.agents/skills/` (Codex, Copilot), and `.agent/skills/`. Edit the source in `.github` only, and start agent sessions from the workspace root so those links are discovered.
+
 ## 3. Discovering repositories
 
 This file intentionally does **not** list repositories. Repos get created, archived, cloned, and deleted over time, so any list here would go stale. Discover the current state instead:
