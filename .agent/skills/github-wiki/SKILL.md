@@ -19,7 +19,7 @@ Maintain the public wiki at <https://github.com/ninegene/.github/wiki> through t
 
 Use root-level `.md` files and GitHub Flavored Markdown. Prefer clear, portable names such as `GitHub-Wiki-Guide.md`; avoid `\ / : * ? " < > |`, reserved navigation names, and punctuation-heavy new names. Preserve existing filenames and links unless a rename is requested.
 
-Start each content page, including `Home.md`, with a title and a visible Markdown metadata table. Order its rows as Category, Tags, Status, Date created, and Last updated. GitHub Wiki renders bare YAML frontmatter as Markdown (the closing `---` can turn it into a Setext heading), so do not use YAML delimiters for wiki page metadata. This restriction applies to wiki pages, not the skill's required YAML frontmatter.
+Start each content page, including `Home.md`, with a title and a visible Markdown metadata table. Order its rows as Category, Tags, Status, Created by, Date created, and Last updated. GitHub Wiki renders bare YAML frontmatter as Markdown (the closing `---` can turn it into a Setext heading), so do not use YAML delimiters for wiki page metadata. This restriction applies to wiki pages, not the skill's required YAML frontmatter.
 
 ```markdown
 # Page title
@@ -29,12 +29,14 @@ Start each content page, including `Home.md`, with a title and a visible Markdow
 | Category | Documentation |
 | Tags | github, wiki |
 | Status | draft |
+| Created by | AI Agent |
 | Date created | 2026-10-04 |
 | Last updated | 2026-10-04 |
 ```
 
 - Use the user's current local date in `yyyy-MM-dd` format; example dates above are illustrative. Set both dates on initial creation. On every page edit, refresh `Last updated` and preserve `Date created`.
 - When adding metadata to an existing page, recover its creation date from the earliest Git history for that page (including prior names when relevant). If unavailable, ask for the missing date instead of inventing it.
+- Set `Created by` on initial creation to the AI company's name and the exact model/version when both are reliably provided by the session or runtime, for example `Anthropic — Claude Sonnet` or `OpenAI — GPT-6 Sol`. Use `AI Agent` if either is unknown; do not infer a model from the app name or copy an illustrative model name. Preserve this attribution on later edits. When adding the row to an existing page, use evidence of its original creator, falling back to `AI Agent` when unavailable rather than attributing it to the current editor.
 - Use one meaningful `Category` and comma-separated concise `Tags`. Reassess both against the resulting content on each edit; reuse suitable existing names rather than creating synonymous categories. Escape literal pipes in table values as `\|`.
 - Use lowercase `Status` values: `draft`, `published`, or `archived`. New pages default to `draft` unless the user requests published status. Preserve an existing status unless a change is requested; when migrating an already listed page without status, set it to `published`. Status is editorial metadata: it does not push commits, remove live pages, or control GitHub's built-in Pages list.
 - When migrating an existing YAML metadata block, remove its delimiters and convert its fields to the table, preserving its creation date, category, and tags; refresh the update date. Maintain a single metadata block rather than duplicating YAML and a visible table.
