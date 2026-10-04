@@ -21,9 +21,9 @@ python3 .github/.agent/skills/github-wiki/scripts/wiki_url.py 'GitHub-Wiki-Guide
 
 For a published page, prefer its actual GitHub page-list link. With unusual punctuation, Unicode, repeated spaces, or trailing dots, inspect the wiki's page list using a browser or read-only HTML fetch, follow the link, and check that the intended page was loaded (a successful HTTP status alone may be insufficient). Preserve the returned path exactly. If verification is unavailable, label a calculated URL as unverified; do not silently invent normalization rules.
 
-### Verified punctuation example
+### Historical punctuation example
 
-On 2026-10-04, the live [wiki page list](https://github.com/ninegene/.github/wiki) contained the link:
+On 2026-10-04, the then-live [wiki page list](https://github.com/ninegene/.github/wiki) contained the link:
 
 ```text
 /ninegene/.github/wiki/My-Name-%E2%80%90-%7C.--%E2%80%90%E2%80%90..
@@ -31,7 +31,7 @@ On 2026-10-04, the live [wiki page list](https://github.com/ninegene/.github/wik
 
 The corresponding local filename was `My-Name-‐-|.--‐‐...md`. The link has two final dots while removing only `.md` from the filename leaves three. This observed discrepancy is why unusual published URLs must be read from GitHub rather than inferred. Do not generalize this observation into a rule that strips a dot from every filename.
 
-Here `‐` is U+2010 (encoded `%E2%80%90`), distinct from ASCII `-`, and `|` is encoded `%7C`. The verified full URL is [the punctuation example](https://github.com/ninegene/.github/wiki/My-Name-%E2%80%90-%7C.--%E2%80%90%E2%80%90..).
+Here `‐` is U+2010 (encoded `%E2%80%90`), distinct from ASCII `-`, and `|` is encoded `%7C`. The example page has since been removed from the local wiki; retain this observation as URL research, not as an active page link.
 
 To encode an already verified, decoded slug:
 
