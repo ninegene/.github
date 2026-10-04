@@ -1,0 +1,56 @@
+{
+  // bootstrap-dev-env.sh installs every extension listed here.
+  "recommendations": [
+    // Editor
+    "vscodevim.vim",
+    "usernamehw.errorlens",
+    "editorconfig.editorconfig",
+    "aaron-bond.better-comments",
+    "christian-kohler.path-intellisense",
+    "formulahendry.code-runner",
+    "iancovski.reveal-in-explorer",
+    "flyfly6.terminal-in-status-bar",
+    "dracula-theme.theme-dracula",
+
+    // AI
+    "anthropic.claude-code",
+    "openai.chatgpt",
+
+    // Git and GitHub
+    "eamodio.gitlens",
+    "codezombiech.gitignore",
+    "github.vscode-github-actions",
+
+    // Bash
+    "timonwong.shellcheck",
+    "mkhl.shfmt",
+
+    // JavaScript / TypeScript
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // Python
+    "ms-python.python",
+    "ms-python.debugpy",
+    "ms-pyright.pyright",
+    "charliermarsh.ruff",
+
+    // Go
+    "golang.go",
+
+    // Elixir / Erlang
+    "JakeBecker.elixir-ls",
+    "phoenixframework.phoenix",
+    "erlang-ls.erlang-ls",
+
+    // Terraform
+    "hashicorp.terraform",
+    "ms-azuretools.vscode-azureterraform",
+
+    // Data, config and docs
+    "ckolkman.vscode-postgres",
+    "humao.rest-client",
+    "tamasfe.even-better-toml",
+    "davidanson.vscode-markdownlint"
+  ]
+}
