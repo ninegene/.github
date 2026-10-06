@@ -4,7 +4,7 @@
 # Installs the tools shared by every ninegene repo: Xcode Command Line Tools,
 # Homebrew, git, curl, gh, shellcheck, shfmt, nvm, uv, VS Code (plus every extension
 # listed in .github/.vscode/extensions.json), Go, Elixir (with Erlang), Terraform,
-# AWS CLI, Azure CLI, Google Cloud CLI, Claude Code and Codex CLI.
+# AWS CLI, Azure CLI, Google Cloud CLI, Claude Code, Codex CLI and Antigravity CLI.
 #
 # Only the steps everything else depends on (platform check, Command Line Tools,
 # Homebrew) stop the script. If any other tool fails to install, the script keeps
@@ -20,7 +20,7 @@ NVM_VERSION="v0.40.3"
 VSCODE_APP="/Applications/Visual Studio Code.app"
 # "name:command[:app path]"; the command (or app) is what we look for to skip installs.
 BREW_FORMULAE=(git:git curl:curl gh:gh shellcheck:shellcheck shfmt:shfmt uv:uv go:go elixir:elixir awscli:aws azure-cli:az hashicorp/tap/terraform:terraform)
-BREW_CASKS=("visual-studio-code:code:$VSCODE_APP" claude-code:claude codex:codex gcloud-cli:gcloud)
+BREW_CASKS=("visual-studio-code:code:$VSCODE_APP" claude-code:claude codex:codex antigravity-cli:agy gcloud-cli:gcloud)
 # Extensions to install: every ID in .vscode/extensions.json next to this script.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXTENSIONS_FILE="$SCRIPT_DIR/.vscode/extensions.json"
@@ -161,9 +161,9 @@ install_cli_tools() {
 }
 
 install_editor_and_ai_tools() {
-	log_step "VS Code, Claude Code, Codex CLI and Google Cloud CLI"
+	log_step "VS Code, Claude Code, Codex CLI, Antigravity CLI and Google Cloud CLI"
 	brew_install_all cask "${BREW_CASKS[@]}"
-	log_info "sign in later with: gh auth login, claude, codex, aws configure sso, az login, gcloud auth login"
+	log_info "sign in later with: gh auth login, claude, codex, agy, aws configure sso, az login, gcloud auth login"
 }
 
 # Prefer `code` on PATH; fall back to the CLI bundled in the app.
@@ -240,7 +240,7 @@ print_summary() {
 	for item in "${NOTES[@]+"${NOTES[@]}"}"; do
 		log_warn "$item"
 	done
-	log_info "Next: sign in with 'gh auth login', 'claude', 'codex', 'aws configure sso', 'az login' and 'gcloud auth login'."
+	log_info "Next: sign in with 'gh auth login', 'claude', 'codex', 'agy', 'aws configure sso', 'az login' and 'gcloud auth login'."
 	log_info "Then clone a repo and run its own setup script (see that repo's README)."
 	((${#FAILURES[@]} == 0))
 }
