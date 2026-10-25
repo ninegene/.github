@@ -43,6 +43,7 @@ This file intentionally does **not** list repositories. Repos get created, archi
 
 - **Location:** clone or create every `ninegene` repo directly under the workspace root as `<workspace>/<repo-name>/`, using the GitHub repo name as the directory name.
 - **Agent docs:** every repo should have its own `AGENTS.md`, with `CLAUDE.md` as a symlink to it (`ln -s AGENTS.md CLAUDE.md`). Cover what the repo is, commands, architecture, and conventions specific to that repo.
+- **Task runner:** when a repo needs a task file, prefer `just` with a `justfile` for commands such as setup, lint, test and release. Use `make` / `Makefile` only when make is a better fit, such as C or C++ builds that benefit from file dependencies and incremental compilation.
 - **Visibility:** choose per repo. Anything with credentials, personal data, or private notes is **private**. Never commit secrets. Use env vars or local config files listed in `.gitignore`.
 - **Third-party clones:** the workspace may also contain clones of repos owned by other people (e.g. cheatsheets, plugin collections). Treat them as **read-only references**: don't edit, commit, or push in them, and don't apply this file's conventions to them. Their `origin` is not under `ninegene`.
 
