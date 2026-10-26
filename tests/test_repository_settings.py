@@ -1,4 +1,4 @@
-"""Exercise GitHub mutations and failure handling without network access."""
+"""Exercise repository-setting writes and failures without network access."""
 
 from contextlib import ExitStack, redirect_stdout, redirect_stderr
 from copy import deepcopy
@@ -23,35 +23,28 @@ ENDPOINT = f"repos/{REPO}"
 
 class GitHub:
     def __init__(self):
-        self.repository = {"full_name": REPO, "default_branch": "main", "fork": False, "archived": False}
-        self.rulesets = {}
+        self.repository = {
+            "full_name": REPO, "default_branch": "main", "fork": False,
+            "archived": False, "description": "Preserve unrelated metadata",
+        }
+        self.calls = []
         self.writes = []
         self.fail = None
 
     def api(self, method, endpoint, payload=None):
+        self.calls.append((method, endpoint))
         if self.fail == (method, endpoint):
             raise RuntimeError("GitHub refused the operation")
-        if method != "GET":
-            self.writes.append((method, endpoint, deepcopy(payload)))
+        if method == "PATCH" and endpoint == ENDPOINT:
+            self.writes.append(deepcopy(payload))
+            self.repository.update(payload)
+        elif method != "GET":
+            raise AssertionError(f"Unexpected mutation: {method} {endpoint}")
         if endpoint == ENDPOINT:
-            if method == "PATCH":
-                self.repository.update(payload)
             return deepcopy(self.repository)
         if endpoint == ENDPOINT + "/branches/main":
             return {"name": "main"}
-        if "/rulesets?" in endpoint:
-            return [
-                {"id": key, "name": value["name"], "source_type": "Repository", "source": REPO}
-                for key, value in self.rulesets.items()
-            ]
-        if method == "POST" and endpoint.endswith("/rulesets"):
-            key = max(self.rulesets, default=0) + 1
-            self.rulesets[key] = dict(deepcopy(payload), id=key)
-            return self.rulesets[key]
-        key = int(endpoint.rsplit("/", 1)[1])
-        if method == "PUT":
-            self.rulesets[key] = dict(deepcopy(payload), id=key)
-        return deepcopy(self.rulesets[key])
+        raise AssertionError(f"Unexpected endpoint: {endpoint}")
 
 
 class RepositorySettingsTests(unittest.TestCase):
@@ -68,52 +61,45 @@ class RepositorySettingsTests(unittest.TestCase):
         self.assertEqual(self.github.writes, [])
         self.assertIn("No changes made", self.output.getvalue())
 
-    def test_apply_and_reapply_are_idempotent(self):
+    def test_apply_preserves_unrelated_settings_and_is_idempotent(self):
         self.assertEqual(settings.configure(REPO, apply=True), 0)
-        self.assertEqual([method for method, _, _ in self.github.writes], ["PATCH", "POST"])
+        self.assertEqual(len(self.github.writes), 1)
+        self.assertFalse(self.github.writes[0]["allow_merge_commit"])
+        self.assertEqual(self.github.repository["description"], "Preserve unrelated metadata")
         self.github.writes.clear()
         self.assertEqual(settings.configure(REPO, apply=True), 0)
         self.assertEqual(settings.configure(REPO), 0)
         self.assertEqual(self.github.writes, [])
 
-    def test_update_existing_ruleset_preserves_unrelated_ruleset(self):
+    def test_only_free_repository_setting_endpoints_are_used(self):
         settings.configure(REPO, apply=True)
-        self.github.rulesets[1]["enforcement"] = "disabled"
-        self.github.rulesets[9] = {"id": 9, "name": "project-ci", "rules": []}
-        self.github.writes.clear()
-        settings.configure(REPO, apply=True)
-        self.assertEqual(self.github.writes[0][:2], ("PUT", ENDPOINT + "/rulesets/1"))
-        self.assertEqual(self.github.rulesets[9], {"id": 9, "name": "project-ci", "rules": []})
+        self.assertTrue(all(
+            endpoint in {ENDPOINT, ENDPOINT + "/branches/main"}
+            for _, endpoint in self.github.calls
+        ))
+        self.assertFalse(any("ruleset" in endpoint or "protection" in endpoint
+                             for _, endpoint in self.github.calls))
 
-    def test_missing_main_or_unavailable_rulesets_prevents_writes(self):
-        for endpoint in [ENDPOINT + "/branches/main", ENDPOINT + "/rulesets?per_page=100&page=1"]:
-            self.github.fail = ("GET", endpoint)
-            with self.assertRaises(RuntimeError):
-                settings.configure(REPO, apply=True)
-            self.assertEqual(self.github.writes, [])
-
-    def test_duplicate_managed_rulesets_prevent_writes(self):
-        settings.configure(REPO, apply=True)
-        self.github.rulesets[2] = deepcopy(self.github.rulesets[1])
-        self.github.writes.clear()
-        with self.assertRaisesRegex(RuntimeError, "Multiple matching"):
+    def test_missing_main_prevents_writes(self):
+        self.github.fail = ("GET", ENDPOINT + "/branches/main")
+        with self.assertRaises(RuntimeError):
             settings.configure(REPO, apply=True)
         self.assertEqual(self.github.writes, [])
 
-    def test_partial_failure_is_not_reported_as_success(self):
-        self.github.fail = ("POST", ENDPOINT + "/rulesets")
+    def test_patch_failure_is_not_reported_as_success(self):
+        self.github.fail = ("PATCH", ENDPOINT)
         with self.assertRaises(RuntimeError):
             settings.configure(REPO, apply=True)
-        self.assertEqual(self.github.writes[0][0], "PATCH")
-        self.assertNotIn("match the templates", self.output.getvalue())
+        self.assertNotIn("match the template", self.output.getvalue())
 
     def test_rejected_readback_fails_verification(self):
         original = self.github.api
 
         def ignore_write(method, endpoint, payload=None):
-            if method == "POST":
-                payload = dict(payload, enforcement="disabled")
-            return original(method, endpoint, payload)
+            result = original(method, endpoint, payload)
+            if method == "PATCH":
+                self.github.repository["allow_merge_commit"] = True
+            return result
 
         with patch.object(settings, "api", side_effect=ignore_write):
             with self.assertRaisesRegex(RuntimeError, "Read-back verification failed"):
@@ -133,27 +119,6 @@ class RepositorySettingsTests(unittest.TestCase):
                 settings.configure(REPO, apply=True)
         self.assertEqual(self.github.writes, [])
 
-    def test_rule_order_is_ignored_but_missing_protection_is_not(self):
-        settings.configure(REPO, apply=True)
-        self.github.rulesets[1]["rules"].reverse()
-        self.assertEqual(settings.configure(REPO), 0)
-        self.github.rulesets[1]["rules"] = []
-        self.assertEqual(settings.configure(REPO), 1)
-
-    def test_pagination_finds_owned_ruleset_not_inherited_namesake(self):
-        name = "ninegene-default-branch"
-        pages = {
-            ENDPOINT + "/rulesets?per_page=100&page=1": [
-                {"id": 99, "name": name, "source_type": "Organization", "source": "other"}
-            ] * 100,
-            ENDPOINT + "/rulesets?per_page=100&page=2": [
-                {"id": 1, "name": name, "source_type": "Repository", "source": REPO}
-            ],
-            ENDPOINT + "/rulesets/1": {"id": 1, "name": name},
-        }
-        with patch.object(settings, "api", side_effect=lambda method, endpoint: pages[endpoint]):
-            self.assertEqual(settings.managed_ruleset(REPO, name)["id"], 1)
-
     def test_cli_rejects_other_owners_without_api_calls(self):
         for target in ["other/example", "ninegene/..", "ninegene/."]:
             with patch("sys.argv", ["repository-settings.py", target, "--apply"]):
@@ -164,12 +129,12 @@ class RepositorySettingsTests(unittest.TestCase):
 
 
 class TransportTests(unittest.TestCase):
-    def test_json_preserves_false_and_zero_and_uses_github_hostname(self):
+    def test_json_preserves_false_and_uses_github_hostname(self):
         with patch.object(settings.subprocess, "run", return_value=SimpleNamespace(
             returncode=0, stdout='{"ok":true}', stderr=""
         )) as run:
-            settings.api("PATCH", ENDPOINT, {"enabled": False, "approvals": 0})
-            self.assertEqual(json.loads(run.call_args.kwargs["input"]), {"enabled": False, "approvals": 0})
+            settings.api("PATCH", ENDPOINT, {"allow_merge_commit": False})
+            self.assertEqual(json.loads(run.call_args.kwargs["input"]), {"allow_merge_commit": False})
             self.assertIn("--hostname", run.call_args.args[0])
             self.assertIn("github.com", run.call_args.args[0])
 
