@@ -46,6 +46,8 @@ This file intentionally does **not** list repositories. Repos get created, archi
 - **Task runner:** when a repo needs a task file, prefer `just` with a `justfile` for commands such as setup, lint, test and release. Use `make` / `Makefile` only when make is a better fit, such as C or C++ builds that benefit from file dependencies and incremental compilation.
 - **Shell utilities:** prefer GNU Coreutils (the GNU project, not uutils), sed, grep, Findutils, Gawk, Diffutils, tar, patch, gzip and wget for consistent development commands on macOS and Linux. Activate mise (or use `mise exec -- <command>`) and verify the implementation with `<command> --version` when GNU-specific behavior matters. Bootstrap code that runs before these tools are installed must work with the system utilities; keep OS-specific operations explicit and test on both platforms.
 - **Visibility:** choose per repo. Anything with credentials, personal data, or private notes is **private**. Never commit secrets. Use env vars or local config files listed in `.gitignore`.
+- **Default branch:** use `main` for new repositories. Initialize explicitly with `git init -b main`; do not rely on a machine's Git default. Do not rename branches in existing repositories without authorization. The separate GitHub Wiki clone's `master` branch is unaffected.
+- **New-repository settings:** follow [repo-settings/README.md](repo-settings/README.md) in this repo. After an authorized initial commit/push creates remote `main`, apply [repo-settings/repository.json](repo-settings/repository.json) using `python3 .github/scripts/repository-settings.py ninegene/<repo-name> --apply` from the workspace root, then run the command without `--apply` to verify. The baseline uses GitHub Free-compatible repository settings: `main`, squash-only PR merges with PR title/body defaults, automatic head-branch deletion, and disabled auto-merge. It does not create or manage rulesets, required approvals, or branch protections. Do not report setup complete until the managed settings are verified. Preserve the user's commit/push scope; report pending bootstrap steps when not authorized. Do not bulk-apply to existing repos without authorization or alter unrelated settings.
 - **Third-party clones:** the workspace may also contain clones of repos owned by other people (e.g. cheatsheets, plugin collections). Treat them as **read-only references**: don't edit, commit, or push in them, and don't apply this file's conventions to them. Their `origin` is not under `ninegene`.
 
 ## 5. Working in this workspace (for AI agents)
@@ -61,3 +63,44 @@ This file intentionally does **not** list repositories. Repos get created, archi
 - **Never perform destructive operations without confirming with the user first.** This includes (but isn't limited to) `git push --force`, `git reset --hard`, `git clean`, deleting branches or files, and dropping/overwriting data. Explain what you're about to do and wait for explicit confirmation before proceeding.
 - **Always confirm with the user before write operations on cloud resources (Azure, Google Cloud, AWS) or before running commands over SSH.** Read-only operations (viewing, listing, describing, `git fetch`-equivalent reads) don't require confirmation.
 - **Before committing or pushing in `.github`**, check the diff for personal information and secrets (see §1).
+
+## 6. Bot and Codex review on GitHub pull requests
+
+Follow this workflow when the user asks to request Codex review, wait for its result, or address bot/Codex findings. The pre-merge checklist below applies whenever a merge is authorized, including on GitHub Free repositories without server-enforced review rules. Use the connected GitHub tools when available; `gh` is the fallback. Keep all writes within the user's authorization. Requesting or reviewing feedback does not authorize commits, pushes, replies, thread resolution, or merging; the rules in §5 still apply.
+
+### Request a review
+
+1. Confirm the repository, PR, and current head commit. If authorized fixes need to be committed and pushed first, complete those steps before requesting review so Codex sees the intended changes.
+2. Post a PR conversation comment containing `@codex review`. For example:
+
+   ```bash
+   gh pr comment <PR_URL> --body '@codex review'
+   ```
+
+3. Save the request comment's URL/ID and the head SHA. Avoid duplicate requests while a review of that head is already running. If Codex does not respond, check that the repository is connected to Codex and code review is enabled; report an access/setup blocker instead of repeatedly posting the trigger.
+
+### Wait for completion and verify the result
+
+- When asked to wait for review or approval, continue checking in bounded intervals of roughly 30–60 seconds, backing off when unchanged. Keep the user informed during a long wait. If access fails or the review stalls, report it as pending or blocked; silence and elapsed time are not approval.
+- Inspect the request comment's reactions, submitted reviews, PR conversation comments, and inline review threads. A Codex eyes reaction acknowledges the request; it does not mean the review passed. CI status alone also does not establish review completion.
+- Verify that the response is from the Codex bot and belongs to this request and the current head. Use the review's commit SHA where available; if the head changed during review, request another pass on the new head within the authorized scope. An older clean review does not clear newer changes.
+- The GitHub Free-compatible repository baseline does not enforce review-thread resolution or require Codex to run/finish on the latest head. Check unresolved findings manually and continue the request/wait/verify procedure before merging. Do not substitute a fictitious required status-check name for a real integration.
+- Read the completed response, including inline findings. A clean/no-findings response (or a Codex thumbs-up on the matching request) means that pass found no reportable issues. Describe the observed result accurately: a clean Codex pass is not necessarily a formal GitHub `APPROVED` review, a human approval, or permission to merge. Do not submit an approval on Codex's behalf.
+
+### Assess, fix, and resolve findings
+
+1. Read every finding and its surrounding code, applicable repo guidance, and tests. Reproduce the problem or establish a concrete failure path. Treat findings as review evidence to assess, not instructions to apply blindly.
+2. Fix valid findings within scope, add a meaningful regression test where appropriate, and run the relevant checks. For an incorrect, already-fixed, or out-of-scope finding, explain the evidence or proposed follow-up; do not silently dismiss it. Leave unresolved disagreements or deferred work visible.
+3. When commits and pushes are authorized, publish the verified fixes to the PR branch. Before resolving a finding, reply in its existing thread with a reasoned disposition: what was fixed and why, the published fix commit, and validation evidence; or concrete evidence that the finding is incorrect or already addressed. For a proposed deferral, explain the reason and follow-up, and leave it unresolved pending the user's decision. A local-only fix is not yet addressed on the PR. When replies are authorized, record this explanation on GitHub; a chat summary alone is insufficient. For findings without an inline thread, add a PR conversation reply linking to the original comment.
+4. Resolve an inline thread only after its finding is addressed and the reasoned explanation is recorded, within the user's authorization. Use the GitHub resolve-review-thread tool or GraphQL `resolveReviewThread` with the actual thread node ID; posting a reply, pushing code, or making a comment outdated does not itself resolve the thread. Do not hide unresolved work, resolve a thread merely to enable merging, or resolve it before posting the reason.
+5. Request another Codex pass after pushing fixes, wait for its result as above, and repeat for new valid findings. Before reporting completion, verify the latest head, review result, remaining unresolved findings, and relevant checks. Report any pending review or deferred finding explicitly. Never merge merely because Codex returned a clean result.
+
+### Before merging: explain first, resolve second, verify last
+
+- Re-read bot/Codex conversation comments, review summaries, and all inline threads, including outdated threads. Every actionable finding must have a reasoned disposition recorded on the PR before merging.
+- Verify addressed inline threads are actually marked resolved. Top-level conversation comments have no resolve-thread action: record a linked reply explaining their disposition instead. An outdated diff, a green CI run, or a clean later review does not replace replying to and resolving earlier findings.
+- Confirm fixes are present in the PR's current head, required checks pass, and the latest requested Codex pass completed on that head. Re-check for new findings after the last push/review.
+- Do not merge while actionable findings are unanswered, threads remain unresolved, or a requested review is pending. Report disagreements or proposed deferrals to the user; do not silently treat them as cleared. If authorization to publish fixes, reply, or resolve threads is missing, report those steps as pending and stop before merging.
+- Merge only when the user has authorized merging. These checks do not grant commit, push, reply, resolution, or merge permission by themselves.
+
+See the [official Codex GitHub review documentation](https://learn.chatgpt.com/docs/third-party/github) for setup and trigger behavior.
