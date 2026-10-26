@@ -27,86 +27,46 @@ def api(method, endpoint, payload=None):
     if result.returncode:
         raise RuntimeError(
             f"{method} {endpoint} failed: {result.stderr.strip()}\n"
-            "Check access, administration permissions, and plan support. "
-            "Do not treat an unavailable ruleset as enforced."
+            "Check repository access and administration permissions."
         )
     return json.loads(result.stdout)
 
 
-def differences(expected, actual, prefix=""):
-    """Compare managed fields; tolerate extra API response metadata."""
-    changes = []
-    for key, value in expected.items():
-        path = f"{prefix}.{key}" if prefix else key
-        other = actual.get(key)
-        if isinstance(value, dict) and isinstance(other, dict):
-            changes.extend(differences(value, other, path))
-        elif key == "rules" and isinstance(other, list):
-            by_type = {rule["type"]: rule for rule in other}
-            for rule in value:
-                changes.extend(differences(rule, by_type.get(rule["type"], {}), path))
-            extra = set(by_type) - {rule["type"] for rule in value}
-            if extra:
-                changes.append(f"{path}: additional rules {sorted(extra)}")
-        elif value != other:
-            changes.append(f"{path}: expected {value!r}, got {other!r}")
-    return changes
-
-
-def managed_ruleset(repo, name):
-    matches = []
-    page = 1
-    while True:
-        rulesets = api("GET", f"repos/{repo}/rulesets?per_page=100&page={page}")
-        matches.extend(
-            item for item in rulesets
-            if item["name"] == name and item.get("source_type") == "Repository"
-            and item.get("source", "").lower() == repo.lower()
-        )
-        if len(rulesets) < 100:
-            break
-        page += 1
-    if len(matches) > 1:
-        raise RuntimeError("Multiple matching rulesets; reconcile duplicates manually first.")
-    if matches:
-        return api("GET", f"repos/{repo}/rulesets/{matches[0]['id']}")
-    return None
+def differences(expected, actual):
+    """Compare only settings owned by the template."""
+    return [
+        f"{key}: expected {value!r}, got {actual.get(key)!r}"
+        for key, value in expected.items() if actual.get(key) != value
+    ]
 
 
 def configure(repo, apply=False):
     settings = json.loads((TEMPLATES / "repository.json").read_text())
-    rules = json.loads((TEMPLATES / "default-branch.ruleset.json").read_text())
     endpoint = f"repos/{repo}"
     current = api("GET", endpoint)
+    # Reject rename/transfer redirects instead of writing to another repository.
+    if current.get("full_name", "").lower() != repo.lower():
+        raise RuntimeError("Repository identity changed; use its current, authorized name.")
     if current.get("fork") or current.get("archived"):
         raise RuntimeError("Forks and archived repositories are excluded from this baseline.")
-    # Verify the initialized branch and access to rulesets before any mutation.
+    # The desired default branch must already exist; do not create or rename it.
     api("GET", f"{endpoint}/branches/{settings['default_branch']}")
-    existing = managed_ruleset(repo, rules["name"])
     setting_changes = differences(settings, current)
-    rule_changes = differences(rules, existing or {})
-    for change in setting_changes + rule_changes:
+    for change in setting_changes:
         print(change)
     if not apply:
-        if setting_changes or rule_changes:
+        if setting_changes:
             print("Drift found. No changes made. Use --apply only for an authorized target.")
             return 1
     else:
-        # This manages only these settings and this named ruleset. Preserve all others.
-        # API writes are not transactional: on failure, stop and report partial setup.
+        # Patch only managed repository settings; do not read or alter rulesets.
         if setting_changes:
             api("PATCH", endpoint, settings)
-        if rule_changes:
-            if existing:
-                api("PUT", f"{endpoint}/rulesets/{existing['id']}", rules)
-            else:
-                api("POST", f"{endpoint}/rulesets", rules)
         saved = api("GET", endpoint)
-        saved_rules = managed_ruleset(repo, rules["name"])
-        remaining = differences(settings, saved) + differences(rules, saved_rules or {})
+        remaining = differences(settings, saved)
         if remaining:
             raise RuntimeError("Read-back verification failed:\n" + "\n".join(remaining))
-    print(f"{repo}: repository settings and default-branch ruleset match the templates.")
+    print(f"{repo}: repository settings match the template.")
     return 0
 
 
