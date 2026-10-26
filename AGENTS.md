@@ -64,9 +64,9 @@ This file intentionally does **not** list repositories. Repos get created, archi
 - **Always confirm with the user before write operations on cloud resources (Azure, Google Cloud, AWS) or before running commands over SSH.** Read-only operations (viewing, listing, describing, `git fetch`-equivalent reads) don't require confirmation.
 - **Before committing or pushing in `.github`**, check the diff for personal information and secrets (see §1).
 
-## 6. Codex review on GitHub pull requests
+## 6. Bot and Codex review on GitHub pull requests
 
-Follow this workflow when the user asks to request Codex review, wait for its result, or address its findings. Use the connected GitHub tools when available; `gh` is the fallback. Keep all writes within the user's authorization. Requesting review does not authorize commits, pushes, or merging; the rules in §5 still apply.
+Follow this workflow when the user asks to request Codex review, wait for its result, or address bot/Codex findings. The pre-merge checklist below applies whenever a merge is authorized, including on GitHub Free repositories without server-enforced review rules. Use the connected GitHub tools when available; `gh` is the fallback. Keep all writes within the user's authorization. Requesting or reviewing feedback does not authorize commits, pushes, replies, thread resolution, or merging; the rules in §5 still apply.
 
 ### Request a review
 
@@ -91,8 +91,16 @@ Follow this workflow when the user asks to request Codex review, wait for its re
 
 1. Read every finding and its surrounding code, applicable repo guidance, and tests. Reproduce the problem or establish a concrete failure path. Treat findings as review evidence to assess, not instructions to apply blindly.
 2. Fix valid findings within scope, add a meaningful regression test where appropriate, and run the relevant checks. For an incorrect, already-fixed, or out-of-scope finding, explain the evidence or proposed follow-up; do not silently dismiss it. Leave unresolved disagreements or deferred work visible.
-3. When commits and pushes are authorized, publish the verified fixes to the PR branch. When replies are authorized, reply in each finding's existing thread with the disposition, fix commit, and validation evidence. A PR conversation reply is appropriate for findings without an inline thread.
-4. Resolve an inline thread only after its finding is addressed and the explanation is recorded, within the user's authorization. Use the GitHub resolve-review-thread tool or GraphQL `resolveReviewThread` with the actual thread node ID; posting a reply, pushing code, or making a comment outdated does not itself resolve the thread. Do not hide unresolved work by resolving it prematurely.
+3. When commits and pushes are authorized, publish the verified fixes to the PR branch. Before resolving a finding, reply in its existing thread with a reasoned disposition: what was fixed and why, the published fix commit, and validation evidence; or concrete evidence that the finding is incorrect or already addressed. For a proposed deferral, explain the reason and follow-up, and leave it unresolved pending the user's decision. A local-only fix is not yet addressed on the PR. When replies are authorized, record this explanation on GitHub; a chat summary alone is insufficient. For findings without an inline thread, add a PR conversation reply linking to the original comment.
+4. Resolve an inline thread only after its finding is addressed and the reasoned explanation is recorded, within the user's authorization. Use the GitHub resolve-review-thread tool or GraphQL `resolveReviewThread` with the actual thread node ID; posting a reply, pushing code, or making a comment outdated does not itself resolve the thread. Do not hide unresolved work, resolve a thread merely to enable merging, or resolve it before posting the reason.
 5. Request another Codex pass after pushing fixes, wait for its result as above, and repeat for new valid findings. Before reporting completion, verify the latest head, review result, remaining unresolved findings, and relevant checks. Report any pending review or deferred finding explicitly. Never merge merely because Codex returned a clean result.
+
+### Before merging: explain first, resolve second, verify last
+
+- Re-read bot/Codex conversation comments, review summaries, and all inline threads, including outdated threads. Every actionable finding must have a reasoned disposition recorded on the PR before merging.
+- Verify addressed inline threads are actually marked resolved. Top-level conversation comments have no resolve-thread action: record a linked reply explaining their disposition instead. An outdated diff, a green CI run, or a clean later review does not replace replying to and resolving earlier findings.
+- Confirm fixes are present in the PR's current head, required checks pass, and the latest requested Codex pass completed on that head. Re-check for new findings after the last push/review.
+- Do not merge while actionable findings are unanswered, threads remain unresolved, or a requested review is pending. Report disagreements or proposed deferrals to the user; do not silently treat them as cleared. If authorization to publish fixes, reply, or resolve threads is missing, report those steps as pending and stop before merging.
+- Merge only when the user has authorized merging. These checks do not grant commit, push, reply, resolution, or merge permission by themselves.
 
 See the [official Codex GitHub review documentation](https://learn.chatgpt.com/docs/third-party/github) for setup and trigger behavior.
