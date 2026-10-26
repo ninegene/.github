@@ -61,3 +61,35 @@ This file intentionally does **not** list repositories. Repos get created, archi
 - **Never perform destructive operations without confirming with the user first.** This includes (but isn't limited to) `git push --force`, `git reset --hard`, `git clean`, deleting branches or files, and dropping/overwriting data. Explain what you're about to do and wait for explicit confirmation before proceeding.
 - **Always confirm with the user before write operations on cloud resources (Azure, Google Cloud, AWS) or before running commands over SSH.** Read-only operations (viewing, listing, describing, `git fetch`-equivalent reads) don't require confirmation.
 - **Before committing or pushing in `.github`**, check the diff for personal information and secrets (see §1).
+
+## 6. Codex review on GitHub pull requests
+
+Follow this workflow when the user asks to request Codex review, wait for its result, or address its findings. Use the connected GitHub tools when available; `gh` is the fallback. Keep all writes within the user's authorization. Requesting review does not authorize commits, pushes, or merging; the rules in §5 still apply.
+
+### Request a review
+
+1. Confirm the repository, PR, and current head commit. If authorized fixes need to be committed and pushed first, complete those steps before requesting review so Codex sees the intended changes.
+2. Post a PR conversation comment containing `@codex review`. For example:
+
+   ```bash
+   gh pr comment <PR_URL> --body '@codex review'
+   ```
+
+3. Save the request comment's URL/ID and the head SHA. Avoid duplicate requests while a review of that head is already running. If Codex does not respond, check that the repository is connected to Codex and code review is enabled; report an access/setup blocker instead of repeatedly posting the trigger.
+
+### Wait for completion and verify the result
+
+- When asked to wait for review or approval, continue checking in bounded intervals of roughly 30–60 seconds, backing off when unchanged. Keep the user informed during a long wait. If access fails or the review stalls, report it as pending or blocked; silence and elapsed time are not approval.
+- Inspect the request comment's reactions, submitted reviews, PR conversation comments, and inline review threads. A Codex eyes reaction acknowledges the request; it does not mean the review passed. CI status alone also does not establish review completion.
+- Verify that the response is from the Codex bot and belongs to this request and the current head. Use the review's commit SHA where available; if the head changed during review, request another pass on the new head within the authorized scope. An older clean review does not clear newer changes.
+- Read the completed response, including inline findings. A clean/no-findings response (or a Codex thumbs-up on the matching request) means that pass found no reportable issues. Describe the observed result accurately: a clean Codex pass is not necessarily a formal GitHub `APPROVED` review, a human approval, or permission to merge. Do not submit an approval on Codex's behalf.
+
+### Assess, fix, and resolve findings
+
+1. Read every finding and its surrounding code, applicable repo guidance, and tests. Reproduce the problem or establish a concrete failure path. Treat findings as review evidence to assess, not instructions to apply blindly.
+2. Fix valid findings within scope, add a meaningful regression test where appropriate, and run the relevant checks. For an incorrect, already-fixed, or out-of-scope finding, explain the evidence or proposed follow-up; do not silently dismiss it. Leave unresolved disagreements or deferred work visible.
+3. When commits and pushes are authorized, publish the verified fixes to the PR branch. When replies are authorized, reply in each finding's existing thread with the disposition, fix commit, and validation evidence. A PR conversation reply is appropriate for findings without an inline thread.
+4. Resolve an inline thread only after its finding is addressed and the explanation is recorded, within the user's authorization. Use the GitHub resolve-review-thread tool or GraphQL `resolveReviewThread` with the actual thread node ID; posting a reply, pushing code, or making a comment outdated does not itself resolve the thread. Do not hide unresolved work by resolving it prematurely.
+5. Request another Codex pass after pushing fixes, wait for its result as above, and repeat for new valid findings. Before reporting completion, verify the latest head, review result, remaining unresolved findings, and relevant checks. Report any pending review or deferred finding explicitly. Never merge merely because Codex returned a clean result.
+
+See the [official Codex GitHub review documentation](https://learn.chatgpt.com/docs/third-party/github) for setup and trigger behavior.
