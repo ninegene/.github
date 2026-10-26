@@ -5,6 +5,7 @@ Shared AI-agent context and the **starting point for developer setup** for the r
 > **This repo is public.** Don't commit personal information or secrets here.
 
 - [AGENTS.md](AGENTS.md): context for AI coding agents about the local workspace (`CLAUDE.md` is a symlink to it)
+- [repo-settings/](repo-settings/README.md): JSON defaults and a check/apply helper for new repos: `main`, squash-only PRs, and resolved review threads without required approvals
 - [.agent/skills/](.agent/skills/): shared workspace skills, including [GitHub Wiki maintenance](.agent/skills/github-wiki/SKILL.md)
 - [link-workspace.sh](link-workspace.sh): sets up the local workspace (symlinks into the workspace root)
 - [bootstrap-dev-env.sh](bootstrap-dev-env.sh): installs the shared developer tools (macOS only for now)
