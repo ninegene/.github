@@ -60,7 +60,7 @@ This file intentionally does **not** list repositories. Repos get created, archi
 - If a task needs a repo that isn't cloned, find it with `gh` (see §3) and clone it into the workspace root. Don't assume what exists.
 - **Commit messages:** use [Conventional Commits](https://www.conventionalcommits.org/) format (`<type>(<optional scope>): <description>`, e.g. `fix(prompt): correct branch name`, `docs: clarify setup steps`). Common types: `feat`, `fix`, `docs`, `refactor`, `chore`, `test`. Applies to every repo here unless a repo's own docs say otherwise.
 - **Never run `git commit` (in any repo in this workspace) unless the user has explicitly asked for a commit in the current request.** Staging, diffing, and preparing a commit message are fine; making the commit is not, until asked.
-- **Never perform destructive operations without confirming with the user first.** This includes (but isn't limited to) `git push --force`, `git reset --hard`, `git clean`, deleting branches or files, and dropping/overwriting data. Explain what you're about to do and wait for explicit confirmation before proceeding.
+- **Never perform destructive operations without confirming with the user first.** This includes (but isn't limited to) `git push --force`, `git reset --hard`, `git clean`, deleting branches or files, and dropping/overwriting data. Explain what you're about to do and wait for explicit confirmation before proceeding. The verified local PR-branch cleanup under "After merging" below is authorized as part of an authorized PR merge and needs no separate confirmation.
 - **Always confirm with the user before write operations on cloud resources (Azure, Google Cloud, AWS) or before running commands over SSH.** Read-only operations (viewing, listing, describing, `git fetch`-equivalent reads) don't require confirmation.
 - **Before committing or pushing in `.github`**, check the diff for personal information and secrets (see §1).
 
@@ -102,5 +102,14 @@ Follow this workflow when the user asks to request Codex review, wait for its re
 - Confirm fixes are present in the PR's current head, required checks pass, and the latest requested Codex pass completed on that head. Re-check for new findings after the last push/review.
 - Do not merge while actionable findings are unanswered, threads remain unresolved, or a requested review is pending. Report disagreements or proposed deferrals to the user; do not silently treat them as cleared. If authorization to publish fixes, reply, or resolve threads is missing, report those steps as pending and stop before merging.
 - Merge only when the user has authorized merging. These checks do not grant commit, push, reply, resolution, or merge permission by themselves.
+
+### After merging
+
+Complete local cleanup after every authorized PR merge:
+
+1. Verify that GitHub reports the PR as merged and record its head branch, head SHA, and merge commit. Discover the repository's current default branch; do not assume it is `main`.
+2. Fetch the remote, check out the default branch, and pull its latest changes with `git pull --ff-only`. Preserve uncommitted work: if switching or pulling would overwrite changes, stop and report the blocker without resetting, discarding, or automatically stashing them.
+3. Delete only the local branch belonging to the merged PR, after confirming its tip still matches the merged PR's head SHA. Prefer `git branch -d`. For a squash or rebase merge, if Git rejects that deletion because the original commits are not ancestors of the default branch, `git branch -D` is authorized only after verifying the PR is merged, the branch has no additional local commits, and its changes are present on the updated default branch. Preserve branches with unmerged work and unrelated branches.
+4. Verify the default branch is checked out and up to date, report the working-tree status, and confirm that the local PR branch was deleted. Report any incomplete cleanup explicitly.
 
 See the [official Codex GitHub review documentation](https://learn.chatgpt.com/docs/third-party/github) for setup and trigger behavior.
