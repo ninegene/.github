@@ -17,7 +17,28 @@ This baseline manages repository settings supported for private repositories on 
 
 The squash title/body settings **prefill defaults**; GitHub still lets the merger edit the message. They do not validate Conventional Commits or force exact title/body equality. Follow the workspace PR-writing guidance when merging.
 
-The helper does not read or modify rulesets, required approvals, code-owner approvals, status checks, or classic branch protections. Existing protections remain unchanged. For private repositories on GitHub Free, this baseline does not enforce PR-only changes, review-thread resolution, or force-push/deletion protection. Use PRs and follow AGENTS.md's §6 review procedure (`local-pr-review`, or Codex when requested), including checking unresolved findings before merging. Do not claim these process requirements are server-enforced.
+The helper does not read or modify rulesets, required approvals, code-owner approvals, status checks, or classic branch protections. Existing protections remain unchanged. For private repositories on GitHub Free, which can't use rulesets, this baseline does not enforce PR-only changes, review-thread resolution, or force-push/deletion protection. Use PRs and follow AGENTS.md's §6 review procedure (`local-pr-review`, or Codex when requested), including checking unresolved findings before merging. Do not claim these process requirements are server-enforced for private repositories. For public repositories, see the ruleset below.
+
+## Ruleset for public repositories
+
+GitHub Free supports rulesets only on public repositories (the rulesets API returns 403 for private ones), so this part applies to public repos only. [rulesets/default.json](rulesets/default.json) is the ruleset applied to `ninegene/.github` on 2026-11-08, adapted from the `winmetta` organization's default ruleset. Its target is the default branch, with no bypass actors:
+
+| Rule | Effect |
+| --- | --- |
+| `deletion`, `non_fast_forward` | The default branch can't be deleted or force-pushed |
+| `pull_request` | Changes need a PR; squash is the only merge method; every review thread (including the review bot's) must be resolved; 0 approvals are required, so the owner can merge their own PR after review |
+
+It has **no required status check** because these repos have no CI yet. Add a `required_status_checks` rule only together with a workflow whose job name matches, or every PR will wait forever.
+
+With no bypass actors, even the owner can't push straight to the default branch: every change, including the first commit after the ruleset exists, needs a PR. Apply it only to a repo that already has its initial commit on `main`, and only within the user's authorization, since it is a GitHub write:
+
+```bash
+gh api repos/ninegene/example-repo/rulesets
+gh api -X POST repos/ninegene/example-repo/rulesets --input .github/repo-settings/rulesets/default.json
+gh api repos/ninegene/example-repo/rulesets --jq '.[] | "\(.id) \(.name) \(.enforcement)"'
+```
+
+Run the first command to check that no `default` ruleset exists yet (a second POST creates a duplicate), and the last to read the result back. To change an existing ruleset, use `gh api -X PUT repos/ninegene/example-repo/rulesets/<id> --input ...` with the id from the listing. The repository-settings helper doesn't read or write rulesets, so this is a manual step.
 
 ## What enforces this?
 
