@@ -101,6 +101,16 @@ Safe to re-run. On **macOS** it installs Xcode Command Line Tools, Homebrew, `gi
 
 It does **not** set up any individual repo. Each repo documents its own setup in its `README.md` / `AGENTS.md`.
 
+### 5. Install the review skills and the reviewer App
+
+PRs are reviewed locally with the shared skills `local-change-review` and `local-pr-review` from [winmetta/agent-skills](https://github.com/winmetta/agent-skills) (Node 20+; needs `claude` or `codex`):
+
+```bash
+npx skills@latest add winmetta/agent-skills --skill local-change-review --skill local-pr-review --skill pr-description -a claude-code -a codex -g
+```
+
+Posting reviews also needs the `ninegene-reviewer` GitHub App's private key at `~/.config/local-pr-review/app-ninegene.pem` (mode 600; never commit it). The App, its public App ID and how to choose between it and other owners' Apps are in [AGENTS.md §6](AGENTS.md). Follow the skill's `references/github-app-setup.md` to create an App or key.
+
 ## Editing AGENTS.md
 
 Edit `.github/AGENTS.md` (the workspace-root `AGENTS.md` is a symlink to it), then commit and push from inside `.github/`. Other machines get the update with `git -C .github pull`.
