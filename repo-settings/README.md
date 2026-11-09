@@ -50,7 +50,7 @@ Set **GitHub user Settings → Repositories → Repository default branch** to `
 
 Follow the user-authorized visibility and commit/push scope. These commands assume the shell is at the workspace root. Replace `example-repo` before running them.
 
-1. Initialize with `git init -b main example-repo`, add its own README and AGENTS.md, and link CLAUDE.md to AGENTS.md.
+1. Initialize with `git init -b main example-repo`, add its own README and AGENTS.md.
 2. With explicit commit authorization, create the initial commit on `main`. If commit/push permission is missing, prepare the files and report the remaining bootstrap steps; do not invent a commit exception.
 3. With repository creation/push authorization, create the remote from the local source, for example `gh repo create ninegene/example-repo --private --source ./example-repo --remote origin --push`. Choose `--public` only when authorized. Remote `main` must exist before applying the default-branch setting. Avoid server-side auto-initialization that may create a different branch.
 4. Inspect, apply, and verify:

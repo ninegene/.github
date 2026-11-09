@@ -4,7 +4,7 @@ Shared AI-agent context and the **starting point for developer setup** for the r
 
 > **This repo is public.** Don't commit personal information or secrets here.
 
-- [AGENTS.md](AGENTS.md): context for AI coding agents about the local workspace (`CLAUDE.md` is a symlink to it)
+- [AGENTS.md](AGENTS.md): context for AI coding agents about the local workspace
 - [repo-settings/](repo-settings/README.md): JSON defaults and a check/apply helper for new repos: GitHub Free-compatible settings, `main`, and squash-only PR merges
 - [.agent/skills/](.agent/skills/): shared workspace skills, including [GitHub Wiki maintenance](.agent/skills/github-wiki/SKILL.md)
 - [link-workspace.sh](link-workspace.sh): sets up the local workspace (symlinks into the workspace root)
@@ -62,7 +62,6 @@ gh repo clone ninegene/.github
 ├── .vscode/extensions.json -> ../.github/.vscode/extensions.json
 ├── ninegene.code-workspace -> .github/ninegene.code-workspace
 ├── AGENTS.md -> .github/AGENTS.md
-├── CLAUDE.md -> AGENTS.md
 ├── .agent/skills/github-wiki -> ../../.github/.agent/skills/github-wiki
 ├── .agents/skills/github-wiki -> ../../.github/.agent/skills/github-wiki
 ├── .claude/skills/github-wiki -> ../../.github/.agent/skills/github-wiki

@@ -2,9 +2,9 @@
 
 The **workspace root** (the directory containing this file, usually `~/ninegene/` but it may be anywhere) is **not a git repository**. It is a local workspace that holds clones of repositories from the [`ninegene` GitHub user account](https://github.com/ninegene). Each subdirectory is its own independent git repo with its own history, tooling, and conventions.
 
-The workspace-root `AGENTS.md` is a symlink to `.github/AGENTS.md` in the [ninegene/.github](https://github.com/ninegene/.github) repo, and `CLAUDE.md` is a symlink to `AGENTS.md`. Developer setup instructions are in `.github/README.md`.
+The workspace-root `AGENTS.md` is a symlink to `.github/AGENTS.md` in the [ninegene/.github](https://github.com/ninegene/.github) repo. Developer setup instructions are in `.github/README.md`.
 
-**Before working inside a repo, read that repo's own `AGENTS.md` / `CLAUDE.md` / `README.md`.** Repo-level instructions override this file. This file only covers conventions shared by every repo.
+**Before working inside a repo, read that repo's own `AGENTS.md` / `README.md`.** Repo-level instructions override this file. This file only covers conventions shared by every repo.
 
 ## 1. This repo is public
 
@@ -32,8 +32,9 @@ Shared skills work with Claude, Codex, and GitHub Copilot. The source lives in `
 
 ## 3. Discovering repositories
 
-This file intentionally does **not** list repositories. Repos get created, archived, cloned, and deleted over time, so any list here would go stale. Discover the current state instead:
+This file intentionally does **not** list repositories, apart from the archived ones noted below, which agents must not work on. Repos get created, archived, cloned, and deleted over time, so any list here would go stale. Discover the current state instead:
 
+- **Archived repos:** `bootstrap` (an old dotfiles and machine-setup repo) is archived and read-only; its role is now covered by `winmetta/bootstrap-dev-env`. Read it for reference only. Don't open PRs against it, change its files (including a local clone), or unarchive it. Check any other repo with `isArchived` before working in it: `gh repo list` includes archived repos unless you add `--no-archived`.
 - **Local clones:** each subdirectory of the workspace root that contains a `.git/` is a clone. Which repos are cloned varies by machine and over time.
 - **All own repos (source of truth):**
   ```bash
@@ -46,7 +47,7 @@ This file intentionally does **not** list repositories. Repos get created, archi
 ## 4. Conventions for repos
 
 - **Location:** clone or create every `ninegene` repo directly under the workspace root as `<workspace>/<repo-name>/`, using the GitHub repo name as the directory name.
-- **Agent docs:** every repo should have its own `AGENTS.md`, with `CLAUDE.md` as a symlink to it (`ln -s AGENTS.md CLAUDE.md`). Cover what the repo is, commands, architecture, and conventions specific to that repo.
+- **Agent docs:** every repo should have its own `AGENTS.md` (current Claude Code reads it directly, so no `CLAUDE.md` is needed). Cover what the repo is, commands, architecture, and conventions specific to that repo.
 - **Task runner:** when a repo needs a task file, prefer `just` with a `justfile` for commands such as setup, lint, test and release. Use `make` / `Makefile` only when make is a better fit, such as C or C++ builds that benefit from file dependencies and incremental compilation.
 - **Shell utilities:** prefer GNU Coreutils (the GNU project, not uutils), sed, grep, Findutils, Gawk, Diffutils, tar, patch, gzip and wget for consistent development commands on macOS and Linux. Activate mise (or use `mise exec -- <command>`) and verify the implementation with `<command> --version` when GNU-specific behavior matters. Bootstrap code that runs before these tools are installed must work with the system utilities; keep OS-specific operations explicit and test on both platforms.
 - **Visibility:** choose per repo. Anything with credentials, personal data, or private notes is **private**. Never commit secrets. Use env vars or local config files listed in `.gitignore`.
@@ -69,7 +70,9 @@ This file intentionally does **not** list repositories. Repos get created, archi
 - **Review with the `local-change-review` skill before each commit.** Before every commit, follow the skill's "Before a commit" steps: it fixes the findings and reviews again until none are left, then you commit if committing is allowed (see the rule above). For `.github` changes this includes the §1 check for personal information and secrets. If the skill isn't installed, see "Shared agent skills" below.
 - **Never perform destructive operations without confirming with the user first.** This includes (but isn't limited to) `git push --force`, `git reset --hard`, `git clean`, deleting branches or files, and dropping/overwriting data. Explain what you're about to do and wait for explicit confirmation before proceeding. The verified local PR-branch cleanup under "After merging" below is authorized as part of an authorized PR merge and needs no separate confirmation.
 - **Always confirm with the user before write operations on cloud resources (Azure, Google Cloud, AWS) or before running commands over SSH.** This covers anything that creates, modifies or deletes cloud resources (VMs, storage, databases, IAM, DNS, etc.), including `pulumi up`, `pulumi destroy` and `pulumi refresh`, `terraform apply` and `terraform destroy`, and any command run on a remote host via SSH. Read-only operations (viewing, listing, describing, `pulumi preview`, `terraform plan`, `git fetch`-equivalent reads) don't require confirmation.
+- **Never update production systems without explicit approval.** This covers production deployments, databases, DNS, hosting, domains and live websites, for any change however small, and applies even when the same action is routine on a non-production system. Ask first, name the system and the change, and wait for a clear yes in the current request.
 - **Before committing or pushing in `.github`**, check the diff for personal information and secrets (see §1).
+- **Check the current date and time before date-sensitive work** (web searches, package upgrades, version checks, release or deadline questions, "latest" claims). Run `date` instead of assuming it from model memory, and use the result to pick current information and write absolute dates in docs.
 - **Never trust model memory for versions.** Before adding or upgrading a dependency, runtime or tool (npm or PyPI packages, Node, Python, GitHub Actions, Docker images, CLIs, Terraform/Pulumi providers), look up the latest stable version from its source of truth (`npm view <package> version`, `pip index versions <package>`, `gh api repos/<owner>/<action>/releases/latest --jq .tag_name`, the project's release page) instead of relying on memory. Read release notes before a major upgrade, run the repo's checks afterwards, record the date of any "latest version" claim written into docs, and say so when a version could not be verified.
 - **Don't use personal aliases or shell helpers** (`git st`, `ll`, `z`, ...) in committed scripts, docs, commit instructions or commands you tell others to run. Write the full command (`git status -sb`).
 - **Never bypass git hooks** (`--no-verify`, `LEFTHOOK=0`) or commit a secret to get past a secret scan, unless the user explicitly asks. Fix the cause instead.
@@ -80,6 +83,7 @@ This file intentionally does **not** list repositories. Repos get created, archi
   - **Keep it current:** update the title and description (`gh pr edit`) whenever the scope changes, and before merging.
   - **Public repos:** never put secrets, personal data or private links in a title or description.
   - Opening or editing a PR is outward-facing: do it only when the user asked. Review and merge rules are in §6.
+  - **Use a PR in general; a direct push to the default branch is the exception for minor changes.** Push directly only for low-impact changes that cannot break a build, a deploy or a live system, such as typo and wording fixes, small docs edits and link updates, and only when the user has asked for it in the current request, after the usual review and commit steps, with a plain `git push` (never `--force`). Anything else goes through a PR: code, dependencies, CI workflows, scripts, infrastructure, repository settings and any change with real user impact. If unsure whether a change is minor, use a PR. Changing repository settings or branch rules always needs the user's explicit confirmation.
 
 ## 6. Pull request review
 

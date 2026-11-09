@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sets up the ninegene workspace root (the parent directory of this repo).
-# Creates symlinks there for AGENTS.md, CLAUDE.md, .editorconfig,
+# Creates symlinks there for AGENTS.md, .editorconfig,
 # .markdownlint.json, the workspace file, .vscode/extensions.json, and shared skills.
 # Safe to re-run.
 set -euo pipefail
@@ -27,7 +27,6 @@ link "../$repo_name/.vscode/extensions.json" .vscode/extensions.json
 link "$repo_name/.editorconfig" .editorconfig
 link "$repo_name/.markdownlint.json" .markdownlint.json
 link "$repo_name/AGENTS.md" AGENTS.md
-link AGENTS.md CLAUDE.md
 
 # Keep one source per skill, with per-skill links for each tool's discovery path.
 for skill_dir in "$repo_dir"/.agent/skills/*/; do
