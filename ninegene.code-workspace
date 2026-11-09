@@ -4,8 +4,17 @@
   // Recommended extensions live in .vscode/extensions.json.
   "folders": [
     {
-      "path": ".",
+      "path": "."
     },
+    {
+      "path": "../shell-explain"
+    },
+    {
+      "path": "../shell-lab"
+    },
+    {
+      "path": "../dev-practice"
+    }
   ],
   "settings": {
     // --- General ---------------------------------------------------------
