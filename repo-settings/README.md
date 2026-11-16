@@ -63,6 +63,7 @@ Follow the user-authorized visibility and commit/push scope. These commands assu
 
    Exit 0 means managed settings match; exit 1 means drift with no writes; exit 2 means setup/access/verification failed. The first check normally reports drift. `--apply` is an explicit GitHub write: use it only within authorization. It patches only fields in the JSON and reads them back; unrelated settings are preserved. If verification fails after a write, report setup as incomplete and inspect again.
 5. Verify local upstream and `origin/HEAD` point to `main`, install the `ninegene-reviewer` GitHub App on the repo (check with `app-token.mjs` as described in AGENTS.md §6), and connect it to Codex only if Codex review is wanted. Use feature branches and PRs after bootstrap. The baseline itself installs neither the App nor Codex and requires no review to run or finish.
+6. Ask the user whether the repo should be listed on the personal site, ninegene.com (AGENTS.md §4). If yes, add its entry in `ninegene/ninegene.com` as a separate change.
 
 An existing `master` repository needs a separately authorized rename/migration first. The helper does not rename branches, reset local refs, or create a missing `main`. Do not automatically run it over all existing repos.
 
